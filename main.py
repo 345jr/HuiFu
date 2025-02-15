@@ -53,7 +53,9 @@ class TodoPlugin(Star):
             "recurring": recurring,
         }
         self.tasks.append(task)
+        logger.info(f"目前总任务: {self.tasks}")
         self.save_tasks(self.tasks)
+        
         self.schedule_task(task)
         return task_id
 
@@ -76,7 +78,9 @@ class TodoPlugin(Star):
             return
 
         async def job_func():
+            logger.info(f"任务 {task['id']} 开始执行")
             await self.execute_task(task)
+            logger.info(f"任务 {task['id']} 执行完毕")
 
             if task["recurring"]:
                 # 每天在指定时间执行
@@ -124,21 +128,22 @@ class TodoPlugin(Star):
 
     @todo.command("add")
     async def todo_add(
-        self, event: AstrMessageEvent, time_str: str,recurring:bool, *, content: str ,
+        self, event: AstrMessageEvent, time_str: str,recurring:str, *, content: str ,
     ):
         """
         添加任务：
             time_str: 时间，格式 "HH:MM"（例如 "14:30")
-            recurring: 是否每日重复任务 (True/False)默认为False
+            recurring: 是否每日重复任务 (True/False)默认为
             content: 待办事项内容
         示例:
             /todo add 14:30 True 喝水
         """
-        
-        task_id = self.add_task(event.unified_msg_origin, time_str, content, recurring)
+        recurring_bool = recurring.strip().lower() == "true"
+        task_id = self.add_task(event.unified_msg_origin, time_str, content, recurring_bool)
         yield event.plain_result(
-            f"任务添加成功, 任务ID: {task_id}。时间: {time_str}, 重复: {recurring}"
+            f"任务添加成功, 任务ID: {task_id}。时间: {time_str}, 重复: {recurring_bool}"
         )
+       
 
     @todo.command("list")
     async def todo_list(self, event: AstrMessageEvent):
