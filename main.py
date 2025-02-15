@@ -23,13 +23,13 @@ class TodoPlugin(Star):
         示例:
             /todo 10 吃饭
         """
-        # yield event.plain_result(f"代办任务已创建,时间:{delay},任务内容{content}")
         # 异步调度定时任务
         msg_origin = event.unified_msg_origin
-        asyncio.create_task(self.schedule_todo(event.get_message_str(),delay,content,msg_origin))
+        asyncio.create_task(self.run_schedule_todo(event.get_message_str(),delay,content,msg_origin))
         yield event.plain_result("定时任务已调度。")
         yield event.plain_result(f"{event.get_message_str()}")
-
+    async def run_schedule_todo(self,event: AstrMessageEvent, delay: int, content: str, msg_origin: str):
+        await self.schedule_todo(event, delay, content, msg_origin)
     async def schedule_todo(self,event: AstrMessageEvent, delay: int, content: str, msg_origin: str):
         # 等待指定的时间
         await asyncio.sleep(delay)
