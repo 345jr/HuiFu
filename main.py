@@ -12,7 +12,7 @@ class TodoPlugin(Star):
         self.tasks = []
 
     @filter.command("todo")
-    async def todo_command(self, event: AstrMessageEvent, delay: int):
+    async def todo_command(self, event: AstrMessageEvent, delay: int , content: str):
         """
         创建一个待办事项定时提醒。
 
@@ -24,7 +24,7 @@ class TodoPlugin(Star):
             /todo 10 吃饭
         """
         # 先回复用户，确认待办事项已经创建
-        await event.send(f"待办事项已创建，将在 {delay} 秒后提醒: {event.get_message_str()}")
+        await event.send(event.chain_result([f"创建待办事项，将在 {delay} 秒后提醒：{content}"]))
         # 异步调度定时任务
         asyncio.create_task(self.schedule_todo(delay, event.get_message_str(), event.unified_msg_origin))
         # 同时可以立即返回一个结果
