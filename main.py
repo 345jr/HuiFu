@@ -21,6 +21,9 @@ class TodoPlugin(Star):
         """
         yield event.plain_result(f"任务以设置,在{delay}秒后提醒:")
         msg_origin = event.unified_msg_origin
+        config = self.context.get_config()
+        persona_config = config['persona'][0]
+        prompt=persona_config["prompt"]
 
         llm_response = await self.context.get_using_provider().text_chat(
             prompt=content,
@@ -28,7 +31,7 @@ class TodoPlugin(Star):
             contexts=[],  # 也可以用上面获得的用户当前的对话记录 context
             image_urls=[],  # 图片链接，支持路径和网络链接
             func_tool=None,
-            system_prompt="",  # 系统提示，可以不传
+            system_prompt=prompt,  # 系统提示，可以不传
         )
 
         await asyncio.sleep(delay)
