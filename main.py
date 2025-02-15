@@ -9,7 +9,6 @@ from apscheduler.triggers.date import DateTrigger
 from astrbot.api.event import filter, AstrMessageEvent, MessageChain, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
-from astrbot.core.message.components import Plain
 
 
 @register("todo_plugin", "lopop", "定时任务插件：创建待办事项并在指定时间提醒", "1.1.0")
@@ -52,7 +51,7 @@ class TodoPlugin(Star):
         task = {
             "id": task_id,
             "msg_origin": msg_origin,
-            "time_str": time_str,  # 格式 "HH:MM"
+            "time_str": time_str,  
             "content": content,
             "recurring": recurring,
         }
@@ -74,33 +73,28 @@ class TodoPlugin(Star):
         """为任务添加调度，支持每日重复和一次性任务"""
         time_str = task["time_str"]
         try:
-            hour, minute = map(int, time_str.split(":"))
+            if ":" in time_str:
+                hour, minute = map(int, time_str.split(":"))
+            elif "：" in time_str:
+                hour, minute = map(int, time_str.split("："))
         except Exception as e:
             logger.error(f"任务 {task['id']} 时间格式错误: {time_str}")
             return
 
         async def job_func():
             await self.execute_task(task)
-            if task["recurring"]:
-                # 每天在指定时间执行
-                trigger = CronTrigger(hour=hour,
-                                      minute=minute,
-                                      timezone="Asia/Shanghai")
-            else:
-                # 一次性任务:计算下次执行时间（今天未到则今天，否则明天）
-                run_date = self.compute_next_datetime(hour, minute)
-                trigger = DateTrigger(run_date=run_date,
-                                      timezone="Asia/Shanghai")
-            self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
+            if not task["recurring"]:
+                self.remove_task(task["id"])
 
         if task["recurring"]:
             trigger = CronTrigger(hour=hour,
                                   minute=minute,
                                   timezone="Asia/Shanghai")
+            self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
         else:
             run_date = self.compute_next_datetime(hour, minute)
-            trigger = DateTrigger(run_date=run_date)
-        self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
+            trigger = DateTrigger(run_date=run_date, timezone="Asia/Shanghai")
+            self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
 
     def compute_next_datetime(self, hour: int, minute: int):
         """计算距离现在最近的指定时间点"""
@@ -151,7 +145,7 @@ class TodoPlugin(Star):
         """
         添加任务：
             time_str: 时间，格式 "HH:MM"（例如 "14:30")
-            recurring: 是否每日重复任务 (T/F)T为重复，F为不重复
+            recurring: 是否每日重复任务 (T/F)T为重复,F为不重复
             content: 待办事项内容
         示例:
             /todo add 14:30 True 喝水
@@ -204,12 +198,10 @@ class TodoPlugin(Star):
         """
         帮助信息
         """
-        yield event.plain_result("""
-        待办任务管理命令组：
+        yield event.plain_result("""待办任务管理命令组：
             /todo add <HH:MM> <T/F> <内容> 添加任务
             /todo ls 查看任务列表
             /todo del <任务ID> 删除任务
         例子:
-            /todo add 14:30 T 喝水 (每天14:30提醒我喝水)
-            /todo add 14:30 F 喝水 (14:30提醒我喝水，但只提醒一次)
-        """)
+            /todo add 02:30 T 喝水 (每天14:30提醒我喝水)
+            /todo add 14:30 F 喝水 (14:30提醒我喝水,但只提醒一次)""")
