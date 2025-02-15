@@ -124,7 +124,7 @@ class TodoPlugin(Star):
 
     @todo.command("add")
     async def todo_add(
-        self, event: AstrMessageEvent, time_str: str,recurring:bool=False, *, content: str ,
+        self, event: AstrMessageEvent, time_str: str,recurring:bool, *, content: str ,
     ):
         """
         添加任务：
@@ -139,7 +139,7 @@ class TodoPlugin(Star):
         yield event.plain_result(
             f"任务添加成功, 任务ID: {task_id}。时间: {time_str}, 重复: {recurring}"
         )
-        
+
     @todo.command("list")
     async def todo_list(self, event: AstrMessageEvent):
         """
