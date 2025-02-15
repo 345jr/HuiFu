@@ -25,12 +25,12 @@ class TodoPlugin(Star):
         """
         # yield event.plain_result(f"代办任务已创建,时间:{delay},任务内容{content}")
         # 异步调度定时任务
-        asyncio.create_task(self.schedule_todo(delay, event.get_message_str(), event.unified_msg_origin))
-        # 同时可以立即返回一个结果
+        msg_origin = event.unified_msg_origin
+        asyncio.create_task(self.schedule_todo(event.get_message_str(),delay,content,msg_origin))
         yield event.plain_result("定时任务已调度。")
         yield event.plain_result(f"{event.get_message_str()}")
 
-    async def schedule_todo(self,event: AstrMessageEvent, delay: int, content: str, unified_msg_origin: str):
+    async def schedule_todo(self,event: AstrMessageEvent, delay: int, content: str, msg_origin: str):
         # 等待指定的时间
         await asyncio.sleep(delay)
         yield event.plain_result("触发")
@@ -49,4 +49,4 @@ class TodoPlugin(Star):
             Plain(f"待办事项提醒:\n提醒内容: {result_text}")
         ]
         # 通过 unified_msg_origin 将消息发送回原会话
-        await self.context.send_message(unified_msg_origin, message_chain)
+        await self.context.send_message(msg_origin, message_chain)
