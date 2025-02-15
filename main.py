@@ -1,9 +1,10 @@
 import os
 import json
 import uuid
+from pytz import timezone
 from datetime import datetime, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger 
+from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from astrbot.api.event import filter, AstrMessageEvent, MessageChain, MessageEventResult
 from astrbot.api.star import Context, Star, register
@@ -13,9 +14,11 @@ from astrbot.core.message.components import Plain
 
 @register("todo_plugin", "lopop", "定时任务插件：创建待办事项并在指定时间提醒", "1.0.0")
 class TodoPlugin(Star):
+
     def __init__(self, context: Context):
         super().__init__(context)
-        self.tasks_file = os.path.join(os.path.dirname(__file__), "todo_tasks.json")
+        self.tasks_file = os.path.join(os.path.dirname(__file__),
+                                       "todo_tasks.json")
         self.tasks = self.load_tasks()
         self.scheduler = AsyncIOScheduler()
         self.scheduler.start()
@@ -42,7 +45,8 @@ class TodoPlugin(Star):
         except Exception as e:
             logger.error(f"保存任务失败: {e}")
 
-    def add_task(self, msg_origin: str, time_str: str, content: str, recurring: bool):
+    def add_task(self, msg_origin: str, time_str: str, content: str,
+                 recurring: bool):
         """添加任务,返回任务ID"""
         task_id = str(uuid.uuid4())
         task = {
@@ -77,6 +81,7 @@ class TodoPlugin(Star):
             logger.error(f"任务 {task['id']} 时间格式错误: {time_str}")
             return
         logger.info("初次调度完毕")
+
         async def job_func():
             logger.info(f"任务 {task['id']} 开始执行")
             await self.execute_task(task)
@@ -84,18 +89,34 @@ class TodoPlugin(Star):
 
             if task["recurring"]:
                 # 每天在指定时间执行
-                trigger = CronTrigger(hour=hour, minute=minute)
-                self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
+                trigger = CronTrigger(hour=hour,
+                                      minute=minute,
+                                      timezone="Asia/Shanghai")
             else:
                 # 计算下次执行时间（今天未到则今天，否则明天）
                 run_date = self.compute_next_datetime(hour, minute)
                 trigger = DateTrigger(run_date=run_date)
-                self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
+            self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
+
+        if task["recurring"]:
+            trigger = CronTrigger(hour=hour,
+                                  minute=minute,
+                                  timezone="Asia/Shanghai")
+        else:
+            run_date = self.compute_next_datetime(hour, minute)
+            trigger = DateTrigger(run_date=run_date)
+        test_time = datetime.now()
+        formatted_string = test_time.strftime("%Y-%m-%d %H:%M:%S")
+        logger.info(f"当前时间：{formatted_string}")
+        self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
 
     def compute_next_datetime(self, hour: int, minute: int):
         """计算距离现在最近的指定时间点"""
         now = datetime.now()
-        run_date = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        run_date = now.replace(hour=hour,
+                               minute=minute,
+                               second=0,
+                               microsecond=0)
         if run_date <= now:
             run_date += timedelta(days=1)
         return run_date
@@ -128,7 +149,12 @@ class TodoPlugin(Star):
 
     @todo.command("add")
     async def todo_add(
-        self, event: AstrMessageEvent, time_str: str,recurring:str, *, content: str ,
+        self,
+        event: AstrMessageEvent,
+        time_str: str,
+        recurring: str,
+        *,
+        content: str,
     ):
         """
         添加任务：
@@ -139,11 +165,10 @@ class TodoPlugin(Star):
             /todo add 14:30 True 喝水
         """
         recurring_bool = recurring.strip().lower() == "true"
-        task_id = self.add_task(event.unified_msg_origin, time_str, content, recurring_bool)
+        task_id = self.add_task(event.unified_msg_origin, time_str, content,
+                                recurring_bool)
         yield event.plain_result(
-            f"任务添加成功, 任务ID: {task_id}。时间: {time_str}, 重复: {recurring_bool}"
-        )
-       
+            f"任务添加成功, 任务ID: {task_id}。时间: {time_str}, 重复: {recurring_bool}")
 
     @todo.command("list")
     async def todo_list(self, event: AstrMessageEvent):
@@ -169,11 +194,8 @@ class TodoPlugin(Star):
             /todo delete <任务ID>
         """
         task = next(
-            (
-                t
-                for t in self.tasks
-                if t["id"] == task_id and t["msg_origin"] == event.unified_msg_origin
-            ),
+            (t for t in self.tasks if t["id"] == task_id
+             and t["msg_origin"] == event.unified_msg_origin),
             None,
         )
         if not task:
@@ -181,9 +203,9 @@ class TodoPlugin(Star):
         else:
             self.remove_task(task_id)
             yield event.plain_result("任务已删除。")
+
     @todo.command("time")
     async def todo_time(self, event: AstrMessageEvent):
-            test_time = datetime.now()
-            formatted_string = test_time.strftime("%Y-%m-%d %H:%M:%S")
-            yield event.plain_result(formatted_string)
-        
+        test_time = datetime.now()
+        formatted_string = test_time.strftime("%Y-%m-%d %H:%M:%S")
+        yield event.plain_result(formatted_string)
