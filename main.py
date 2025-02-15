@@ -12,7 +12,7 @@ from astrbot.api import logger
 from astrbot.core.message.components import Plain
 
 
-@register("todo_plugin", "lopop", "定时任务插件：创建待办事项并在指定时间提醒", "1.0.0")
+@register("todo_plugin", "lopop", "定时任务插件：创建待办事项并在指定时间提醒", "1.1.0")
 class TodoPlugin(Star):
 
     def __init__(self, context: Context):
@@ -57,9 +57,7 @@ class TodoPlugin(Star):
             "recurring": recurring,
         }
         self.tasks.append(task)
-        logger.info(f"目前总任务: {self.tasks}")
         self.save_tasks(self.tasks)
-        logger.info("保存成功")
         self.schedule_task(task)
         return task_id
 
@@ -80,22 +78,19 @@ class TodoPlugin(Star):
         except Exception as e:
             logger.error(f"任务 {task['id']} 时间格式错误: {time_str}")
             return
-        logger.info("初次调度完毕")
 
         async def job_func():
-            logger.info(f"任务 {task['id']} 开始执行")
             await self.execute_task(task)
-            logger.info(f"任务 {task['id']} 执行完毕")
-
             if task["recurring"]:
                 # 每天在指定时间执行
                 trigger = CronTrigger(hour=hour,
                                       minute=minute,
                                       timezone="Asia/Shanghai")
             else:
-                # 计算下次执行时间（今天未到则今天，否则明天）
+                # 一次性任务:计算下次执行时间（今天未到则今天，否则明天）
                 run_date = self.compute_next_datetime(hour, minute)
-                trigger = DateTrigger(run_date=run_date)
+                trigger = DateTrigger(run_date=run_date,
+                                      timezone="Asia/Shanghai")
             self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
 
         if task["recurring"]:
@@ -105,9 +100,6 @@ class TodoPlugin(Star):
         else:
             run_date = self.compute_next_datetime(hour, minute)
             trigger = DateTrigger(run_date=run_date)
-        test_time = datetime.now()
-        formatted_string = test_time.strftime("%Y-%m-%d %H:%M:%S")
-        logger.info(f"当前时间：{formatted_string}")
         self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
 
     def compute_next_datetime(self, hour: int, minute: int):
@@ -159,18 +151,21 @@ class TodoPlugin(Star):
         """
         添加任务：
             time_str: 时间，格式 "HH:MM"（例如 "14:30")
-            recurring: 是否每日重复任务 (True/False)默认为
+            recurring: 是否每日重复任务 (T/F)T为重复，F为不重复
             content: 待办事项内容
         示例:
             /todo add 14:30 True 喝水
         """
-        recurring_bool = recurring.strip().lower() == "true"
+        if recurring.lower() == "t":
+            recurring_bool = True
+        else:
+            recurring_bool = False
         task_id = self.add_task(event.unified_msg_origin, time_str, content,
                                 recurring_bool)
         yield event.plain_result(
             f"任务添加成功, 任务ID: {task_id}。时间: {time_str}, 重复: {recurring_bool}")
 
-    @todo.command("list")
+    @todo.command("ls")
     async def todo_list(self, event: AstrMessageEvent):
         """
         查看当前用户的任务列表
@@ -185,7 +180,7 @@ class TodoPlugin(Star):
                 msg += f"ID: {t['id']} 时间: {t['time_str']} 重复: {t['recurring']} 内容: {t['content']}\n"
             yield event.plain_result(msg)
 
-    @todo.command("delete")
+    @todo.command("del")
     async def todo_delete(self, event: AstrMessageEvent, task_id: str):
         """
         删除任务：
@@ -204,8 +199,17 @@ class TodoPlugin(Star):
             self.remove_task(task_id)
             yield event.plain_result("任务已删除。")
 
-    @todo.command("time")
-    async def todo_time(self, event: AstrMessageEvent):
-        test_time = datetime.now()
-        formatted_string = test_time.strftime("%Y-%m-%d %H:%M:%S")
-        yield event.plain_result(formatted_string)
+    @todo.command("help")
+    async def todo_help(self, event: AstrMessageEvent):
+        """
+        帮助信息
+        """
+        yield event.plain_result("""
+        待办任务管理命令组：
+            /todo add <HH:MM> <T/F> <内容> 添加任务
+            /todo ls 查看任务列表
+            /todo del <任务ID> 删除任务
+        例子:
+            /todo add 14:30 T 喝水 (每天14:30提醒我喝水)
+            /todo add 14:30 F 喝水 (14:30提醒我喝水，但只提醒一次)
+        """)
