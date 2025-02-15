@@ -55,7 +55,7 @@ class TodoPlugin(Star):
         self.tasks.append(task)
         logger.info(f"目前总任务: {self.tasks}")
         self.save_tasks(self.tasks)
-        
+        logger.info("保存成功")
         self.schedule_task(task)
         return task_id
 
@@ -76,7 +76,7 @@ class TodoPlugin(Star):
         except Exception as e:
             logger.error(f"任务 {task['id']} 时间格式错误: {time_str}")
             return
-
+        logger.info("初次调度完毕")
         async def job_func():
             logger.info(f"任务 {task['id']} 开始执行")
             await self.execute_task(task)
@@ -181,3 +181,7 @@ class TodoPlugin(Star):
         else:
             self.remove_task(task_id)
             yield event.plain_result("任务已删除。")
+    @todo.command("time")
+    async def todo_delete(self, event: AstrMessageEvent):
+         yield event.plain_result(datetime.now())
+        
