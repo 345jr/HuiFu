@@ -139,41 +139,7 @@ class TodoPlugin(Star):
         yield event.plain_result(
             f"任务添加成功, 任务ID: {task_id}。时间: {time_str}, 重复: {recurring}"
         )
-
-    # @todo.command("add")
-    # async def todo_command(self, event: AstrMessageEvent, time_str: int, content: str):
-    #     """
-    #     参数:
-    #         delay (int): 延迟的秒数（等待多少秒后提醒）。
-    #         content (str): 待办事项的内容。
-    #     """
-
-    #     try:
-    #         hour, minute = map(int, time_str.split(":"))
-    #     except Exception as e:
-    #         yield event.plain_result("时间格式错误，请使用 HH:MM 格式，例如 14:30")
-    #         return
-
-    #     # yield event.plain_result(f"任务以设置,在{delay}秒后提醒:")
-    #     msg_origin = event.unified_msg_origin
-    #     config = self.context.get_config()
-    #     persona_config = config['persona'][0]
-    #     prompt=persona_config["prompt"]
-    #     async def job():
-    #         llm_response = await self.context.get_using_provider().text_chat(
-    #             prompt=content,
-    #             session_id=None,  # 此已经被废弃
-    #             contexts=[],  # 也可以用上面获得的用户当前的对话记录 context
-    #             image_urls=[],  # 图片链接，支持路径和网络链接
-    #             func_tool=None,
-    #             system_prompt=prompt,  # 系统提示，可以不传
-    #         )
-    #         message_chain = MessageChain().message(llm_response.completion_text)
-    #         await self.context.send_message(msg_origin, message_chain)
-
-    #     self.scheduler.add_job(job, trigger=CronTrigger(hour=hour, minute=minute))
-    #     yield event.plain_result(f"定时任务已设置，每天 {hour:02d}:{minute:02d} 提醒: {content}")
-
+        
     @todo.command("list")
     async def todo_list(self, event: AstrMessageEvent):
         """
