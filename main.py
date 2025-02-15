@@ -83,8 +83,6 @@ class TodoPlugin(Star):
 
         async def job_func():
             await self.execute_task(task)
-            if not task["recurring"]:
-                self.remove_task(task["id"])
 
         if task["recurring"]:
             trigger = CronTrigger(hour=hour,
