@@ -183,5 +183,7 @@ class TodoPlugin(Star):
             yield event.plain_result("任务已删除。")
     @todo.command("time")
     async def todo_time(self, event: AstrMessageEvent):
-            yield event.plain_result(datetime.now())
+            test_time = datetime.now()
+            formatted_string = test_time.strftime("%Y-%m-%d %H:%M:%S")
+            yield event.plain_result(formatted_string)
         
