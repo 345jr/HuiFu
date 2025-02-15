@@ -23,8 +23,7 @@ class TodoPlugin(Star):
         示例:
             /todo 10 吃饭
         """
-        # 先回复用户，确认待办事项已经创建
-        await event.send(event.chain_result([f"创建待办事项，将在 {delay} 秒后提醒：{content}"]))
+        # yield event.plain_result(f"代办任务已创建,时间:{delay},任务内容{content}")
         # 异步调度定时任务
         asyncio.create_task(self.schedule_todo(delay, event.get_message_str(), event.unified_msg_origin))
         # 同时可以立即返回一个结果
@@ -41,18 +40,11 @@ class TodoPlugin(Star):
             contexts=[],
             image_urls=[],
             func_tool=func_tools_mgr,
-            system_prompt="你是一个智能助手，负责生成友好且实用的待办事项提醒。"
         )
-        # 处理 LLM 的响应，简化示例：只考虑 assistant 角色的情况
-        if llm_response.role == "assistant":
-            result_text = llm_response.completion_text
-        elif llm_response.role == "tool":
-            result_text = f"调用函数: {llm_response.tools_call_name}, 参数: {llm_response.tools_call_args}"
-        else:
-            result_text = "无法生成提醒信息。"
+        result_text = llm_response
         # 构造消息链，包含待办事项内容和 LLM 返回的提醒文本
         message_chain = [
-            Plain(f"待办事项提醒: {content}\n提醒内容: {result_text}")
+            Plain(f"待办事项提醒:\n提醒内容: {result_text}")
         ]
         # 通过 unified_msg_origin 将消息发送回原会话
         await self.context.send_message(unified_msg_origin, message_chain)
