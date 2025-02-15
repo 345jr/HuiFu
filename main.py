@@ -28,10 +28,12 @@ class TodoPlugin(Star):
         asyncio.create_task(self.schedule_todo(delay, event.get_message_str(), event.unified_msg_origin))
         # 同时可以立即返回一个结果
         yield event.plain_result("定时任务已调度。")
+        yield event.plain_result(f"{event.get_message_str()}")
 
-    async def schedule_todo(self, delay: int, content: str, unified_msg_origin: str):
+    async def schedule_todo(self,event: AstrMessageEvent, delay: int, content: str, unified_msg_origin: str):
         # 等待指定的时间
         await asyncio.sleep(delay)
+        yield event.plain_result("触发")
         # 调用 LLM API 来生成提醒文本
         func_tools_mgr = self.context.get_llm_tool_manager()
         llm_response = await self.context.get_using_provider().text_chat(
