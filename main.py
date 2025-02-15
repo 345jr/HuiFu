@@ -182,6 +182,6 @@ class TodoPlugin(Star):
             self.remove_task(task_id)
             yield event.plain_result("任务已删除。")
     @todo.command("time")
-    async def todo_delete(self, event: AstrMessageEvent):
-         yield event.plain_result(datetime.now())
+    async def todo_time(self, event: AstrMessageEvent):
+            yield event.plain_result(datetime.now())
         
