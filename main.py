@@ -134,27 +134,30 @@ class TodoPlugin(Star):
     async def todo_add(
         self,
         event: AstrMessageEvent,
-        time_str: str,
         recurring: str,
+        time_str: str,
         *,
         content: str,
     ):
         """
         添加任务：
             time_str: 时间，格式 "HH:MM"（例如 "14:30")
-            recurring: 是否每日重复任务 (T/F)T为重复,F为不重复
+            recurring: 是否每日重复任务 "每天" 或 "一次" 
             content: 待办事项内容
         示例:
-            /todo add 14:30 True 喝水
+            /todo add 每天 14:30 喝水
+            /todo add 一次 18:00 买菜
         """
-        if recurring.lower() == "t":
+        if recurring == "每天":
             recurring_bool = True
+        elif recurring == "一次":
+            recurring_bool = False
         else:
             recurring_bool = False
         task_id = self.add_task(event.unified_msg_origin, time_str, content,
                                 recurring_bool)
         yield event.plain_result(
-            f"任务添加成功, 任务ID: {task_id}。时间: {time_str}, 重复: {recurring_bool}")
+            f"任务添加成功,时间: {time_str}, 重复: {recurring_bool}")
 
     @todo.command("ls")
     async def todo_list(self, event: AstrMessageEvent):
@@ -196,9 +199,11 @@ class TodoPlugin(Star):
         帮助信息
         """
         yield event.plain_result("""待办任务管理命令组：
-            /todo add <HH:MM> <T/F> <内容> 添加任务
+            /todo add <HH:MM> <每天/一次> <内容> 添加任务
             /todo ls 查看任务列表
             /todo del <任务ID> 删除任务
         例子:
-            /todo add 02:30 T 喝水 (每天14:30提醒我喝水)
-            /todo add 14:30 F 喝水 (14:30提醒我喝水,但只提醒一次)""")
+            /todo add 每天 02:30 喝水 (每天14:30提醒我喝水)
+            /todo add 每天 2：30 喝水 (效果同上可用中文的分号,只有个位前面可以不用加0)                     
+            /todo add 一次 14:30 喝水 (14:30提醒我喝水,完成后该任务会自动删除)""")
+        
