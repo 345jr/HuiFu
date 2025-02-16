@@ -15,11 +15,11 @@
 
 待办任务管理命令组：
 
-            /todo add <HH:MM> <每天/一次> <内容> 添加任务
+            /todo add  <每天/一次> <HH:MM> <内容> #添加任务
             
-            /todo ls 查看任务列表
+            /todo ls #查看任务列表
             
-            /todo del <任务ID> 删除任务
+            /todo del <任务ID> #删除任务
             
         例子:
         
