@@ -82,17 +82,15 @@ class TodoPlugin(Star):
             return
 
         async def job_func():
-            await self.execute_task(task)
+            await self.execute_task(task ,one_job)
 
         if task["recurring"]:
-            trigger = CronTrigger(hour=hour,
-                                  minute=minute,
-                                  timezone="Asia/Shanghai")
+            trigger = CronTrigger(hour=hour,minute=minute,timezone="Asia/Shanghai")
             self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
         else:
             run_date = self.compute_next_datetime(hour, minute)
             trigger = DateTrigger(run_date=run_date, timezone="Asia/Shanghai")
-            self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
+            one_job = self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
 
     def compute_next_datetime(self, hour: int, minute: int):
         """计算距离现在最近的指定时间点"""
@@ -105,7 +103,7 @@ class TodoPlugin(Star):
             run_date += timedelta(days=1)
         return run_date
 
-    async def execute_task(self, task: dict):
+    async def execute_task(self, task: dict ,one_job):
         """任务到时时调用：使用 LLM 生成提醒文本并发送给用户，非重复任务执行后删除"""
         config = self.context.get_config()
         persona_config = config["persona"][0]
@@ -122,9 +120,10 @@ class TodoPlugin(Star):
         message_chain = MessageChain().message(llm_response.completion_text)
         await self.context.send_message(task["msg_origin"], message_chain)
 
-        # 如果是一次性任务，执行后自动删除
+        # # 如果是一次性任务，执行后自动删除
         if not task["recurring"]:
-            self.remove_task(task["id"])
+            one_job.remove()
+            
 
     @filter.command_group("todo")
     def todo(self):
