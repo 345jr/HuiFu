@@ -103,7 +103,7 @@ class TodoPlugin(Star):
             run_date += timedelta(days=1)
         return run_date
 
-    async def execute_task(self, task: dict ,ASP_id):
+    async def execute_task(self, task: dict):
         """任务到时时调用：使用 LLM 生成提醒文本并发送给用户，非重复任务执行后删除"""
         config = self.context.get_config()
         persona_config = config["persona"][0]
