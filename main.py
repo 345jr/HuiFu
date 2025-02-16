@@ -60,14 +60,10 @@ class TodoPlugin(Star):
         self.schedule_task(task)
         return task_id
 
-    def remove_task(self, task_id: str , ASP_id):
+    def remove_task(self, task_id: str):
         """删除任务，同时取消调度"""
-        info = self.scheduler.get_jobs()
-        logger.info(f"目前所有的调度任务信息{info}")
         try:
-            logger.info(f"需要移除的调度任务id: {ASP_id}")
-            self.scheduler.remove_job(ASP_id)
-
+            self.scheduler.remove_job(task_id)
         except Exception as e:
             logger.error(f"移除调度任务失败: {e}")
         self.tasks = [t for t in self.tasks if t["id"] != task_id]
@@ -85,9 +81,8 @@ class TodoPlugin(Star):
             logger.error(f"任务 {task['id']} 时间格式错误: {time_str}")
             return
 
-        async def job_func():
-            ASP_id = one_job.id
-            await self.execute_task(task ,ASP_id)
+        async def job_func():           
+            await self.execute_task(task)
 
         if task["recurring"]:
             trigger = CronTrigger(hour=hour,minute=minute,timezone="Asia/Shanghai")
@@ -95,7 +90,7 @@ class TodoPlugin(Star):
         else:
             run_date = self.compute_next_datetime(hour, minute)
             trigger = DateTrigger(run_date=run_date, timezone="Asia/Shanghai")
-            one_job =self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
+            self.scheduler.add_job(job_func, trigger=trigger, id=task["id"])
 
     def compute_next_datetime(self, hour: int, minute: int):
         """计算距离现在最近的指定时间点"""
@@ -127,7 +122,8 @@ class TodoPlugin(Star):
 
         # # 如果是一次性任务，执行后自动删除
         if not task["recurring"]:
-            self.remove_task(task["id"] , ASP_id)
+            self.tasks = [t for t in self.tasks if t["id"] != task['id']]
+            self.save_tasks(self.tasks)
             
 
     @filter.command_group("todo")
@@ -159,7 +155,7 @@ class TodoPlugin(Star):
             recurring_bool = False
         else:
             recurring_bool = False
-        task_id = self.add_task(event.unified_msg_origin, time_str, content,
+        self.add_task(event.unified_msg_origin, time_str, content,
                                 recurring_bool)
         yield event.plain_result(
             f"任务添加成功,时间: {time_str}, 重复: {recurring_bool}")
