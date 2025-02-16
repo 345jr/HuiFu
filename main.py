@@ -60,10 +60,10 @@ class TodoPlugin(Star):
         self.schedule_task(task)
         return task_id
 
-    def remove_task(self, task_id: str):
+    def remove_task(self, task_id: str , one_job):
         """删除任务，同时取消调度"""
         try:
-            self.scheduler.remove_job(task_id)
+            self.scheduler.remove_job(one_job.id)
         except Exception as e:
             logger.error(f"移除调度任务失败: {e}")
         self.tasks = [t for t in self.tasks if t["id"] != task_id]
@@ -122,7 +122,7 @@ class TodoPlugin(Star):
 
         # # 如果是一次性任务，执行后自动删除
         if not task["recurring"]:
-            one_job.remove()
+            self.remove_task(task["id"] , one_job)
             
 
     @filter.command_group("todo")
