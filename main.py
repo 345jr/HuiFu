@@ -19,8 +19,9 @@ class TodoPlugin(Star):
 
     def __init__(self, context: Context):
         super().__init__(context)
-        self.tasks_file = os.path.join(os.path.dirname(__file__),"todo_tasks.json")
-        self.users_file = os.path.join(os.path.dirname(__file__),"users.json")
+        plugin_dir = os.path.dirname(os.path.abspath(__file__))
+        self.tasks_file = os.path.join(plugin_dir,"todo_tasks.json")
+        self.users_file = os.path.join(plugin_dir,"users.json")
         self.tasks = self.load_tasks()
         self.users = self.load_users()
         self.scheduler = AsyncIOScheduler()
