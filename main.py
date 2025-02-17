@@ -21,21 +21,37 @@ class TodoPlugin(Star):
         super().__init__(context)
         self.tasks_file = os.path.join(os.path.dirname(__file__),"todo_tasks.json")
         self.users_file = os.path.join(os.path.dirname(__file__),"users.json")
-        self.tasks = self.load_tasks( self.tasks_file)
-        self.users = self.load_tasks( self.users_file)
+        self.tasks = self.load_tasks()
+        self.users = self.load_users()
         self.scheduler = AsyncIOScheduler()
         self.scheduler.start()
         for task in self.tasks:
             self.schedule_task(task)
-    @staticmethod
-    def load_tasks(file_name):
+    
+    def load_tasks(self):
         """从 JSON 文件中加载任务列表"""
-        if os.path.exists(file_name):
+        if os.path.exists(self.tasks_file):
             try:
-                with open(file_name, "r", encoding="utf-8") as f:
+                with open(self.tasks_file, "r", encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
                 logger.error(f"加载任务失败: {e}")
+                return []
+        else:
+            return []
+
+    def load_users(self):
+        """从 JSON 文件中加载用户列表"""
+        if os.path.exists(self.users_file):
+            try:
+                with open(self.users_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        return data
+                    else:
+                        return []
+            except Exception as e:
+                logger.error(f"加载用户数据失败: {e}")
                 return []
         else:
             return []
