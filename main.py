@@ -27,7 +27,7 @@ class TodoPlugin(Star):
         self.scheduler.start()
         for task in self.tasks:
             self.schedule_task(task)
-
+    @staticmethod
     def load_tasks(file_name):
         """从 JSON 文件中加载任务列表"""
         if os.path.exists(file_name):
