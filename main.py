@@ -131,7 +131,7 @@ class TodoPlugin(Star):
         """待办任务管理命令组"""
         pass
 
-    @todo.command("add")
+    @todo.command("添加")
     async def todo_add(
         self,
         event: AstrMessageEvent,
@@ -160,7 +160,7 @@ class TodoPlugin(Star):
         yield event.plain_result(
             f"任务添加成功,时间: {time_str}, 重复: {recurring_bool}")
 
-    @todo.command("ls")
+    @todo.command("任务列表")
     async def todo_list(self, event: AstrMessageEvent):
         """
         查看当前用户的任务列表
@@ -175,7 +175,7 @@ class TodoPlugin(Star):
                 msg += f"ID: {t['id']} 时间: {t['time_str']} 重复: {t['recurring']} 内容: {t['content']}\n"
             yield event.plain_result(msg)
 
-    @todo.command("del")
+    @todo.command("删除")
     async def todo_delete(self, event: AstrMessageEvent, task_id: str):
         """
         删除任务：
@@ -194,13 +194,13 @@ class TodoPlugin(Star):
             self.remove_task(task_id)
             yield event.plain_result("任务已删除。")
 
-    @todo.command("help")
+    @todo.command("帮助")
     async def todo_help(self, event: AstrMessageEvent):
         """
         帮助信息
         """
         yield event.plain_result("""待办任务管理命令组：
-            /todo add <HH:MM> <每天/一次> <内容> 添加任务
+            /todo add<每天/一次>  <HH:MM>  <内容> 添加任务
             /todo ls 查看任务列表
             /todo del <任务ID> 删除任务
         例子:
